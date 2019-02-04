@@ -1,4 +1,3 @@
-
 /sensors.js
 /config.js
 .idea/*
@@ -10,3 +9,4 @@ styles/custom.css
 /includes/*
 images/bg4.png
 *.db
+*.DS_Store
