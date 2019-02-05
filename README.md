@@ -3,6 +3,22 @@
 This is a simple yet highly customizable dashboard for Home Assistant. The main goal of this project was to create simple dashboard with an easy way to edit and add functionality with minimum knowledge of javascript and html.
 Should you have any ideas or questions please post them on home-assistant forum or create an issue on github.
 
+## Links
+
+* [TileBoard Chat on Telegram](https://t.me/joinchat/CFM1kQ1ZSNL0T9RB9VwK5w)
+* [Discussion on Home Assistant Community](https://community.home-assistant.io/t/new-dashboard-for-ha/57173)
+* [Demo Video](https://youtu.be/L8JwzWNAPr8)
+
+
+
+## Screenshots
+
+![screen](https://community-home-assistant-assets.s3-us-west-2.amazonaws.com/optimized/3X/b/b/bb15cc5c10e22940698bbb7058d6ed732bb0017a_1_690x388.png)
+
+![screen2](https://community-home-assistant-assets.s3-us-west-2.amazonaws.com/optimized/3X/1/f/1f9a1d7962f0a1335a2d06f352cb329f9d9444a5_1_690x388.png)
+
+![screen3](https://community-home-assistant-assets.s3-us-west-2.amazonaws.com/optimized/3X/7/d/7d300e8e307047c58234967fcf613d3ed0247dc6_1_690x498.jpg)
+
 ## How to use
 * Make sure that you have Home Assistant 0.77 or greater installed as only new authentication system is supported from now on
 * Pull/download repository
@@ -46,7 +62,7 @@ var CONFIG = {
     * If HomeAssistant is behind SSL, replace ws:// with wss://
     */
    wsUrl: 'ws://hassio.local:8123/api/websocket',
-
+   
    /* authToken: Optional Long live token that you can create in your HomeAssistant
     */
    authToken: null,
@@ -58,7 +74,7 @@ var CONFIG = {
 
    /* timeFormat: 12 for AM/PM marker, 24 for 24 hour time (default) */
    timeFormat: Number,
-
+   
    /* Google API key is required if you are using device tarcker tiles along with Google Maps.
     * More info here: https://developers.google.com/maps/documentation/maps-static/usage-and-billing
     */
@@ -69,7 +85,7 @@ var CONFIG = {
 
    /* hideScrollbar: Hiding horizontal scrollbar */
    hideScrollbar: false,
-
+   
    /* groupsAlign: Align groups HORIZONTALLY (default) or VERTICALLY */
    groupsAlign: GROUP_ALIGNS.HORIZONTALLY,
 
@@ -90,9 +106,9 @@ var CONFIG = {
 
      /* slidesTimeout: Amount of time (in seconds) to show each slide */
      slidesTimeout: 10,
-
+     
      styles: { fontSize: '40px' },
-
+     
      /* read more in wiki */
      leftBottom: [{ type: SCREENSAVER_ITEMS.DATETIME }],
 
@@ -103,7 +119,7 @@ var CONFIG = {
        {bg: 'images/bg3.png'}
      ]
    },
-
+   
    /* header: object of header. Will be applied globally
     * https://github.com/resoai/TileBoard/wiki/Header-configuration
     * (optional)
@@ -141,7 +157,7 @@ Page object can have following fields:
    * (optional)
    */
   groupMarginCss: '20px 40px',
-
+  
   /* hidden: hide page (optional)
    * can be boolean or function that return boolean
    */
@@ -161,13 +177,13 @@ We divide tiles (cells) into groups on every page. Group object can have followi
   /* title: Title to display above the group */
   title: 'Group title',
 
-  /* width: Number of tiles horizontally
-   * (optional) Can be calculated automatically
+  /* width: Number of tiles horizontally 
+   * (optional) Can be calculated automatically 
    */
   width: 3,
 
-  /* height: Number of tiles vertically
-   * (optional) Can be calculated automatically
+  /* height: Number of tiles vertically 
+   * (optional) Can be calculated automatically 
    */
   height: 4,
 
@@ -175,7 +191,7 @@ We divide tiles (cells) into groups on every page. Group object can have followi
    * (optional)
    */
   groupMarginCss: '20px 40px',
-
+  
   /* hidden: hide group (optional)
    * can be boolean or function that return boolean
    */
@@ -274,7 +290,7 @@ Tile Object. [Click here for some real life examples](TILE_EXAMPLES.md)
    * (optional)
    */
   slides: [{}, {bg: 'images/slide.jpg'}],
-
+  
   /* hidden: hide tile (optional)
    * can be boolean or function that return boolean
    */
@@ -300,15 +316,15 @@ Tile Object. [Click here for some real life examples](TILE_EXAMPLES.md)
    * Valid options: 'google', 'yandex'
    */
   map: 'google',
-
+  
   /* zoomLevels: zoom levels of map in slides
    * left only one if you what one slide (e.g. [9])
    * (optional)
    */
-  zoomLevels: [9, 13],
-
+  zoomLevels: [9, 13], 
+  
   /* hideEntityPicture: hide entity picture if you want only maps */
-  hideEntityPicture: false,
+  hideEntityPicture: false, 
 
 
   /** type: TEXT_LIST **/
@@ -362,9 +378,9 @@ Tile Object. [Click here for some real life examples](TILE_EXAMPLES.md)
     * (optional)
     */
    classes: ['-compact'],
-
+   
    /* customStyles: Additional styles. Enables tile customisation based on state.
-    * Can be used both as a object `{ 'background-color': '#FF0000' }` or,
+    * Can be used both as a object `{ 'background-color': '#FF0000' }` or, 
     * as a function function (item, entity) { return { 'background-color': '#FF0000' } }
     * (optional)
     */
@@ -443,7 +459,7 @@ Supported weather fields
    windSpeedUnit: '&sensor.dark_sky_wind_speed.attributes.unit_of_measurement',
    humidity: '&sensor.dark_sky_humidity.state',
    humidityUnit: '&sensor.dark_sky_humidity.attributes.unit_of_measurement',
-
+    
    list: [ // array of strings
       // custom line
       'Feels like '
@@ -462,7 +478,7 @@ Supported weather fields
 ### @/& Prefixes
 As you may notice that we use @/& prefixes to get a value inside objects (entities).
 @ is relative to the current entity (@attributes.friendly_name) and & is for global (&sensor.kitchen_temp.state). This may not work everywhere, but you may give it a go.
-Read more in our [wiki article](https://github.com/resoai/TileBoard/wiki/Templates).
+Read more in our [wiki article](https://github.com/resoai/TileBoard/wiki/Templates). 
 
 ### Events
 
@@ -556,5 +572,11 @@ You can then fire a `tileboard` event in HomeAssistant with the following data:
 A number of classes are added to each tile depending on the type of tile and state. Custom CSS styles can be applied by creating a `custom.css` file in the `styles` directory.
 
 ## Tablet and mobile configuration
-For the tablet configuration use `COMPACT` custom theme and reduce padding.
-For the mobiles check out [wiki article](https://github.com/resoai/TileBoard/wiki/Mobile-configuration).
+For the tablet configuration use `COMPACT` custom theme and reduce padding. 
+For the mobiles check out [wiki article](https://github.com/resoai/TileBoard/wiki/Mobile-configuration). 
+
+## Contribution
+Please feel free to post an issue or pull request and we will sort it out
+
+## License
+MIT License
