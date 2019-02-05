@@ -7,8 +7,8 @@
 
    <title>TileBoard</title>
 
-   <meta name="mobile-web-app-capable" content="yes">
    <!-- iOS Settings -->
+   <meta name="mobile-web-app-capable" content="yes">
    <meta name="apple-mobile-web-app-capable" content="yes">
    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
@@ -352,6 +352,9 @@
       <div class="header--left">
          <div header-item ng-repeat="item in header.left track by $index"></div>
       </div>
+      <div class="header--center">
+         <div header-item ng-repeat="item in header.center track by $index"></div>
+      </div>
       <div class="header--right">
          <div header-item ng-repeat="item in header.right track by $index"></div>
       </div>
@@ -391,9 +394,13 @@
          <div class="header-weather--temperature" ng-if="item.fields.temperature">
             <span ng-bind="getWeatherField('temperature', item, {})"></span>
             <span ng-bind="getWeatherField('temperatureUnit', item, {})"></span>
+            <span> | </span>
+            <span ng-bind="getWeatherField('windSpeed', item, {})"></span>
+            <span ng-bind="getWeatherField('windSpeedUnit', item, {})"></span>
          </div>
 
          <div class="header-weather--summary" ng-if="item.fields.summary">
+            <span>Conditions: </span>
             <span ng-bind="getWeatherField('summary', item, {})"></span>
          </div>
       </div>
