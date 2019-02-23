@@ -59,6 +59,8 @@
 @ALARM_A: rgb(208, 11, 49);
 @CUSTOM: rgb(37, 158, 176);
 @VACUUM: rgb(37, 158, 176);
+@POPUP_IFRAME: rgb(68, 116, 156);
+@DIMMER_SWITCH: rgb(130, 156, 108);
 
 
 .item {
@@ -106,6 +108,8 @@
    &.-th-alarm.-armed {background-color: @ALARM;}
    &.-th-custom {background-color: @CUSTOM;}
    &.-th-vacuum {background-color: @VACUUM;}
+   &.-th-popup_iframe {background-color: @POPUP_IFRAME;}
+   &.-th-dimmer_switch {background-color: @DIMMER_SWITCH;}
 }
 
 
@@ -121,6 +125,14 @@ body {
    padding: 0;
    color: #444;
    background-color: #1a4957;
+}
+
+body {
+   -moz-user-select: none;
+   -ms-user-select: none;
+   -khtml-user-select: none;
+   -webkit-user-select: none;
+   -webkit-touch-callout: none;
 }
 
 .errors-container {
@@ -557,7 +569,9 @@ body {
    &.-camera_thumbnail,
    &.-alarm,
    &.-door_entry,
+   &.-popup_iframe,
    &.-input_datetime,
+   &.-dimmer_switch,
    &.-scene {
       cursor: pointer;
 
@@ -1117,7 +1131,7 @@ camera-thumbnail {
    }
 }
 
-.camera-popup, .door-entry-popup {
+.camera-popup, .door-entry-popup, .iframe-popup {
    position: fixed;
    top: 0;
    left: 0;
@@ -1135,6 +1149,7 @@ camera-thumbnail {
       overflow: hidden;
       white-space: nowrap;
       position: relative;
+      margin: auto;
    }
 
    &--list {
@@ -1171,6 +1186,20 @@ camera-thumbnail {
       background: #222;
 
       > div {
+         height: 100%;
+         width: 100%;
+      }
+   }
+
+
+   &--iframe {
+      width: 100%;
+      height: 100%;
+      display: inline-block;
+      vertical-align: top;
+      background: #222;
+
+      > iframe {
          height: 100%;
          width: 100%;
       }

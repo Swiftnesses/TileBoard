@@ -120,6 +120,11 @@ var CONFIG = {
      ]
    },
    
+   /**
+   * if you have troubles with reconnecting to api after uleaving screensaver
+   */
+   reconnectAfterScreensaver: false,
+   
    /* header: object of header. Will be applied globally
     * https://github.com/resoai/TileBoard/wiki/Header-configuration
     * (optional)
@@ -368,6 +373,20 @@ Tile Object. [Click here for some real life examples](TILE_EXAMPLES.md)
    /* sliders: list of slider object. See slider documentation below */
    sliders: [{}],
 
+   /** type: POPUP_IFRAME **/
+   url: String || Function,
+   /* optional */
+   iframeStyles: Object || Function,
+   /* optional */
+   iframeClasses: Array || String || Function,
+
+   /** type: DIMMER_SWITCH **/
+   /* optional (main toggle function)*/
+   action: Function,
+   /* optional (function will be called with context)*/
+   actionPlus: Function,
+   actionMinus: Function,
+
    /** type: WEATHER **/
    /* fields: Object mapping available fields and their values.
     * Full documentation on fields is below
@@ -389,7 +408,15 @@ Tile Object. [Click here for some real life examples](TILE_EXAMPLES.md)
 }
 ```
 
-Every anonymous function will call with context `{states: {}, $scope: {}}`
+Every anonymous function will call with context 
+```js
+{
+   states: {}, // list of current states
+   $scope: {}, // angular scope
+   parseFieldValue: Function, // parser function (for parsing HA states)
+   apiRequest: Function // parser function (args: data, callback=func)
+}
+```
 
 At the moment following entity types have been implemented:
 
@@ -403,13 +430,14 @@ var TYPES = {
    SWITCH: 'switch',
    LOCK: 'lock',
    COVER: 'cover',
+   COVER_TOGGLE: 'cover_toggle',
    FAN: 'fan',
-   GENERIC_ICON: 'generic_icon',
    INPUT_BOOLEAN: 'input_boolean',
    LIGHT: 'light',
    TEXT_LIST: 'text_list',
    INPUT_NUMBER: 'input_number',
    INPUT_SELECT: 'input_select',
+   INPUT_DATETIME: 'input_datetime',
    CAMERA: 'camera',
    CAMERA_THUMBNAIL: 'camera_thumbnail',
    SCENE: 'scene',
@@ -422,6 +450,8 @@ var TYPES = {
    CUSTOM: 'custom',
    ALARM: 'alarm',
    WEATHER_LIST: 'weather_list',
+   VACUUM: 'vacuum',
+   POPUP_IFRAME: 'popup_iframe',
 };
 ```
 

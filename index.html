@@ -4,6 +4,11 @@
 <head>
    <meta charset="UTF-8">
    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+   <meta http-equiv="cache-control" content="max-age=0">
+   <meta http-equiv="cache-control" content="no-cache">
+   <meta http-equiv="expires" content="-1">
+   <meta http-equiv="expires" content="Tue, 01 Jan 1980 11:00:00 GMT">
+   <meta http-equiv="pragma" content="no-cache">
 
    <title>TileBoard</title>
 
@@ -18,31 +23,41 @@
    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
    <meta name="apple-mobile-web-app-title" content="TileBoard">
 
-   <link rel="stylesheet" href="styles/main.css"/>
-   <link rel="stylesheet" href="styles/themes.css"/>
-   <link rel="stylesheet" href="styles/weather-icons.css"/>
-   <link rel="stylesheet" href="styles/custom.css"/>
-
    <style>
       [ng-cloak] { display: none; }
    </style>
 
-   <script src="scripts/vendors/angular.min.js"></script>
-   <script src="scripts/vendors/angular-long-press.js"></script>
+   <script type="text/javascript">
+      var suffix = location.protocol === "file:" ? "" : "?r=" + Math.random();
 
-   <script src="scripts/models/api.js"></script>
-   <script src="scripts/models/noty.js"></script>
+      [
+         'styles/main.css',
+         'styles/themes.css',
+         'styles/weather-icons.css',
+         'styles/custom.css'
+      ].map(function (value) {
+         document.write('<li'+'nk rel="stylesheet" href="'+value+suffix+'"/>');
+      });
 
-   <script src="scripts/app.js"></script>
+      [
+         'scripts/vendors/angular.min.js',
+         'scripts/vendors/angular-long-press.js',
 
-   <!--<script src="config.example.js"></script>-->
-   <script src="config.js"></script>
+         'scripts/models/api.js',
+         'scripts/models/noty.js',
+         'scripts/app.js',
 
-   <script src="scripts/init.js"></script>
-   <script src="scripts/directives.js"></script>
-   <script src="scripts/controllers/main.js"></script>
-   <script src="scripts/controllers/noty.js"></script>
-   <script src="scripts/controllers/screensaver.js"></script>
+         'config.js', // <----- NOT config.example.js !!
+
+         'scripts/init.js',
+         'scripts/directives.js',
+         'scripts/controllers/main.js',
+         'scripts/controllers/noty.js',
+         'scripts/controllers/screensaver.js'
+      ].map(function (value) {
+         document.write('<sc'+'ript src="'+value+suffix+'"></scr'+'ipt>');
+      });
+   </script>
 </head>
 
 <body ng-controller="Main" ng-class="getBodyClass()">
@@ -76,6 +91,21 @@
          </div>
 
          <div class="camera-popup--close" ng-click="closeCamera()">
+            <i class="mdi mdi-close"></i>
+         </div>
+      </div>
+   </div>
+
+   <div class="iframe-popup"
+        ng-class="itemField('iframeClasses', activeIframe, entity)"
+        ng-if="activeIframe && (entity = getItemEntity(activeIframe))">
+      <div class="iframe-popup-container" ng-style="getPopupIframeStyles()">
+         <div class="iframe-popup--iframe">
+            <iframe ng-src="{{ itemField('url', activeIframe, entity) }}"
+                    iframe-tile="activeIframe" frameborder="0"></iframe>
+         </div>
+
+         <div class="iframe-popup--close" ng-click="closePopupIframe()">
             <i class="mdi mdi-close"></i>
          </div>
       </div>
@@ -365,7 +395,8 @@
 <!-- HEADER ITEMS TEMPLATE -->
 
 <script type="text/ng-template" id="header-items.html">
-   <div class="header-item" ng-class="'-' + item.type" ng-style="item.styles" ng-if="!isHidden(item,{})">
+   <div class="header-item" ng-class="'-' + item.type"
+        ng-style="item.styles" ng-if="!isHidden(item,{})">
       <div ng-if="item.type === HEADER_ITEMS.TIME">
          <clock></clock>
       </div>
@@ -559,6 +590,18 @@
          </div>
       </div>
 
+      <div ng-if="item.type === TYPES.POPUP_IFRAME"
+           class="item-entity-container">
+
+         <div ng-if="item.customHtml"
+              ng-bind-html="item.customHtml"></div>
+
+         <div ng-if="!item.customHtml" class="item-entity">
+            <span class="item-entity--icon mdi"
+                  ng-class="entityIcon(item, entity)"></span>
+         </div>
+      </div>
+
       <div ng-if="item.type === TYPES.SCRIPT"
            class="item-entity-container">
 
@@ -644,6 +687,25 @@
                  ng-click="closeLightSliders($event, item, entity)">
                <i class="mdi mdi-chevron-left"></i> Back
             </div>
+         </div>
+      </div>
+      <div ng-if="item.type === TYPES.DIMMER_SWITCH"
+           class="item-entity-container">
+
+         <div ng-if="entityState(item, entity) && entity.state !== 'off'">
+            <div class="item-button -center-right"
+                 ng-click="dimmerAction('plus', $event, item, entity)">
+               <i class="mdi mdi-plus"></i>
+            </div>
+            <div class="item-button -bottom-right"
+                 ng-click="dimmerAction('minus', $event, item, entity)">
+               <i class="mdi mdi-minus"></i>
+            </div>
+         </div>
+
+         <div class="item-entity">
+            <span class="item-entity--icon mdi"
+                  ng-class="entityIcon(item, entity)"></span>
          </div>
       </div>
 
@@ -763,7 +825,8 @@
            class="item-entity-container">
 
          <div class="item-iframe">
-            <iframe ng-src="{{ item.url }}" iframe-tile="item" frameborder="0"></iframe>
+            <iframe ng-src="{{ itemField('url', item, entity) }}"
+                    iframe-tile="item" frameborder="0"></iframe>
          </div>
       </div>
 
@@ -1081,7 +1144,7 @@
 
 
 <link rel="stylesheet" async
-      href="https://cdn.materialdesignicons.com/3.2.89/css/materialdesignicons.min.css">
+      href="https://cdn.materialdesignicons.com/3.3.92/css/materialdesignicons.min.css">
 
 </body>
 </html>
