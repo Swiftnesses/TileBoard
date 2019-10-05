@@ -72,14 +72,9 @@ function MainController ($scope, $location) {
    };
 
    $scope.entityLongClick = function ($event, page, item, entity) {
-      $event.preventDefault();
-      $event.stopPropagation();
-
       switch (item.type) {
          case TYPES.LIGHT: return $scope.openLightSliders(item, entity);
       }
-
-      return false;
    };
 
    $scope.getBodyClass = function () {
@@ -184,6 +179,28 @@ function MainController ($scope, $location) {
             url = "https://static-maps.yandex.ru/1.x/?lang=en-US&ll="
                + coords + "&z=" + zoom + "&l=map&size=" + sizes + "&pt=" + pt;
          }
+         else if(item.map === MAPBOX_MAP) {
+            coords = obj.longitude + ',' + obj.latitude;
+            sizes = sizes.replace(',', 'x');
+
+            var label = name[0].toLowerCase();
+            var marker = "pin-s-" + label + "(" + obj.longitude + ',' + obj.latitude + ")";
+            var style = "mapbox/streets-v11";
+
+            if(CONFIG.mapboxStyle) {
+               var styleGroups = /^mapbox:\/\/styles\/(.+)$/.exec(CONFIG.mapboxStyle);
+               if (styleGroups.length > 1) {
+                  style = styleGroups[1];
+               }
+            }
+
+            url = "https://api.mapbox.com/styles/v1/" + style + "/static/"
+               + marker + "/" + coords + "," + zoom + ",0/" + sizes;
+
+            if(CONFIG.mapboxToken) {
+               url += "?access_token=" + CONFIG.mapboxToken;
+            }
+         }
          else {
             coords = obj.latitude + ',' + obj.longitude;
             sizes = sizes.replace(',', 'x');
@@ -192,14 +209,14 @@ function MainController ($scope, $location) {
             var marker = encodeURIComponent("color:gray|label:"+label+"|" + coords);
 
             url = "https://maps.googleapis.com/maps/api/staticmap?center="
-               + coords + "&zoom="+zoom+"&size="+sizes+"&scale=2&maptype=roadmap&markers=" + marker;
+               + coords + "&zoom=" + zoom + "&size=" + sizes + "&scale=2&maptype=roadmap&markers=" + marker;
 
             if(CONFIG.googleApiKey) {
                url += "&key=" + CONFIG.googleApiKey;
             }
          }
 
-         obj[key] = {backgroundImage: 'url(' + url + ')'};
+         obj[key] = {backgroundImage: "url('" + url + "')"};
       }
 
       return obj[key];
@@ -223,19 +240,26 @@ function MainController ($scope, $location) {
       return true;
    };
 
-   $scope.pageStyles = function (page) {
+   $scope.pageStyles = function (page, index) {
       if(!page.styles) {
          var styles = {};
 
          if(page.bg) {
             var bg = parseFieldValue(page.bg, page, {});
 
-            if(bg) styles.backgroundImage = 'url(' + bg + ')';
+            if(bg) styles.backgroundImage = 'url("' + bg + '")';
          }
          else if(page.bgSuffix) {
             var sbg = parseFieldValue(page.bgSuffix, page, {});
 
-            if(sbg) styles.backgroundImage = 'url(' + CONFIG.serverUrl + sbg + ')';
+            if(sbg) styles.backgroundImage = 'url("' + toAbsoluteServerURL(sbg) + '")';
+         }
+
+         if ((CONFIG.transition === TRANSITIONS.ANIMATED || CONFIG.transition === TRANSITIONS.ANIMATED_GPU)
+             && index > 0 && !$scope.isMenuOnTheLeft) {
+            styles.position = 'absolute';
+            styles.left = (index * 100) + '%';
+            styles.top = '0';
          }
 
          page.styles = styles;
@@ -283,7 +307,7 @@ function MainController ($scope, $location) {
          var styles = {};
 
          if(entity.attributes.entity_picture) {
-            styles.backgroundImage = 'url(' + entity.attributes.entity_picture + ')';
+            styles.backgroundImage = 'url("' + toAbsoluteServerURL(entity.attributes.entity_picture) + '")';
          }
 
          entity.trackerBg = styles;
@@ -390,7 +414,7 @@ function MainController ($scope, $location) {
          else if(item.bgSuffix) {
             bg = parseFieldValue(item.bgSuffix, item, entity);
 
-            if(bg) styles.backgroundImage = 'url(' + CONFIG.serverUrl + bg + ')';
+            if(bg) styles.backgroundImage = 'url("' + toAbsoluteServerURL(bg) + '")';
          }
 
          obj.bgStyles = styles;
@@ -709,12 +733,13 @@ function MainController ($scope, $location) {
 
       var def = item.slider || {};
       var attrs = entity.attributes || {};
-
+      var value = +attrs[def.field] || 0;
+      
       entity.attributes[key] = {
          max: attrs.max || def.max || 100,
          min: attrs.min || def.min || 0,
          step: attrs.step || def.step || 1,
-         value: +entity.state || def.value || 0,
+         value: value || +entity.state || def.value || 0,
          request: def.request || {
             type: "call_service",
             domain: "input_number",
@@ -797,7 +822,7 @@ function MainController ($scope, $location) {
    };
 
    $scope.openLightSliders = function (item, entity) {
-      if(!item.sliders || !item.sliders.length) return;
+      if((!item.sliders || !item.sliders.length) && !item.colorpicker) return;
 
       if(entity.state !== "on") {
          return $scope.toggleSwitch(item, entity, function () {
@@ -849,6 +874,14 @@ function MainController ($scope, $location) {
       return (features | feature) === features;
    };
 
+   $scope.isDisarmed = function (entity) {
+      if(['disarmed'].indexOf(entity.state) === -1) {
+         return true;
+      }
+
+      return false;
+   };
+
    $scope.shouldShowVolumeSlider = function (entity) {
       return $scope.supportsFeature(FEATURES.MEDIA_PLAYER.VOLUME_SET, entity)
           && ('volume_level' in entity.attributes)
@@ -860,6 +893,39 @@ function MainController ($scope, $location) {
           || !('volume_level' in entity.attributes))
           && $scope.supportsFeature(FEATURES.MEDIA_PLAYER.VOLUME_STEP, entity)
           && entity.state !== 'off';
+   };
+
+   var GAUGE_DEFAULTS = {
+      backgroundColor: 'rgba(0, 0, 0, 0.1)',
+      foregroundColor: 'rgba(0, 150, 136, 1)',
+      size: function (item) {
+         return .8 * (CONFIG.tileSize * (item.height < item.width ? item.height : item.width));
+      },
+      duration: 1500,
+      thick: 6,
+      type: 'full',
+      min: 0,
+      max: 100,
+      cap: 'butt',
+      thresholds: {},
+   };
+
+   $scope.getGaugeField = function (field, item, entity) {
+      if(!item) return null;
+
+      if(typeof item.filter === "function") {
+         return callFunction(item.filter, [value, item, entity]);
+      }
+
+      if(item.settings && field in item.settings) {
+         return parseFieldValue(item.settings[field], item, entity);
+      }
+
+      if(field in GAUGE_DEFAULTS) {
+         return parseFieldValue(GAUGE_DEFAULTS[field], item, entity);
+      }
+      
+      return null;
    };
 
 
@@ -1137,6 +1203,46 @@ function MainController ($scope, $location) {
       });
    };
 
+   $scope.getRGBStringFromArray = function( color ) {
+      if(!color) return null;
+      return "rgb(" + color[0] + "," + color[1] + "," + color[2] + ")";
+   };
+
+   $scope.getRGBArrayFromString = function( color ) {
+      if(!color || color.indexOf("rgb") !== 0) return null;
+
+      var colorValues;
+
+      if (color.indexOf("rgba") === 0) {
+         colorValues = color.substring(color.indexOf("(") + 1, color.lastIndexOf(",")).split(",");
+      }
+      else {
+         colorValues = color.substring(color.indexOf("(") + 1, color.indexOf(")")).split(",");
+      }
+
+      return [parseInt(colorValues[0]), parseInt(colorValues[1]), parseInt(colorValues[2])];
+   };
+
+   $scope.setLightColor = function (item, color) {
+      if(item.loading) return;
+
+      var colors = $scope.getRGBArrayFromString(color);
+
+      if(colors) sendItemData(item, {
+         type: "call_service",
+         domain: "light",
+         service: "turn_on",
+         service_data: {
+            entity_id: item.id,
+            rgb_color: colors
+         }
+      });
+   };   
+
+   $scope.$on('colorpicker-colorupdated', function (event, data) {
+      $scope.setLightColor(data.item, data.color);
+   });
+
    $scope.setInputNumber = function (item, value) {
       if(item.loading) return;
 
@@ -1196,10 +1302,10 @@ function MainController ($scope, $location) {
       sendItemData(item, {
          type: "call_service",
          domain: "climate",
-         service: "set_operation_mode",
+         service: "set_preset_mode",
          service_data: {
             entity_id: item.id,
-            operation_mode: option
+            preset_mode: option
          }
       });
 
@@ -1360,7 +1466,7 @@ function MainController ($scope, $location) {
          var d = new Date();
 
          $scope.datetimeString = d.getFullYear() + "";
-         $scope.datetimeString += leadZero(d.getMonth());
+         $scope.datetimeString += leadZero(d.getMonth() + 1);
          $scope.datetimeString += leadZero(d.getDate());
       }
    };
@@ -1446,17 +1552,19 @@ function MainController ($scope, $location) {
 
    function scrollToActivePage (preventAnimation) {
       var index = $scope.pages.indexOf(activePage);
-      var translate = index * 100;
+      var translate = '-' + (index * 100) + '%';
 
       var $pages = document.getElementById("pages");
 
       var transform;
 
       if(CONFIG.transition === TRANSITIONS.ANIMATED_GPU) {
-         transform = 'translate3d(0, -' + translate + '%, 0)';
+         var params = $scope.isMenuOnTheLeft ? [0, translate, 0] : [translate, 0, 0];
+         transform = 'translate3d(' + params.join(',') + ')';
       }
       else if(CONFIG.transition === TRANSITIONS.ANIMATED) {
-         transform = 'translate(0, -' + translate + '%)';
+         var params = $scope.isMenuOnTheLeft ? [0, translate] : [translate, 0];
+         transform = 'translate(' + params.join(',') + ')';
       }
 
       $pages.style.transform = transform;
@@ -1491,6 +1599,21 @@ function MainController ($scope, $location) {
 
       return object.hidden;
    };
+
+   $scope.isMenuOnTheLeft = CONFIG.menuPosition === MENU_POSITIONS.LEFT;
+
+   $scope.onPageSwipe = function (event) {
+      switch (event.offsetDirection) {
+         case Hammer.DIRECTION_UP:
+         case Hammer.DIRECTION_LEFT:
+            $scope.swipeUp();
+            break;
+         case Hammer.DIRECTION_DOWN:
+         case Hammer.DIRECTION_RIGHT:
+            $scope.swipeDown();
+            break;
+      }
+   }
 
    $scope.swipeUp = function () {
       var index = $scope.pages.indexOf(activePage);
@@ -1916,7 +2039,7 @@ function MainController ($scope, $location) {
    }
 
    function updateView () {
-      if(!$scope.$$phase) $scope.$digest();
+      if(!$scope.$$phase) $scope.$apply();
    }
 
    window.openPage = function (page) {
@@ -1931,19 +2054,20 @@ function MainController ($scope, $location) {
    };
 
    function pingConnection () {
-      if(!$scope.ready) return; // no reason to ping if unready was fired
-      if(CONFIG.pingMaxTimeout === false) return;
+      if(!$scope.ready || realReadyState === false) return; // no reason to ping if unready was fired
 
-      var timeout = Math.max(CONFIG.pingMaxTimeout || 3000, 500);
+      var timeout = 3000;
 
       var success = false;
 
-      Api.getUser(function (res) {
+      Api.sendPing(function (res) {
          if('id' in res) success = true;
       });
 
       setTimeout(function () {
          if(success) return;
+
+         realReadyState = false;
 
          var noty = Noty.addObject({
             type: Noty.WARNING,
@@ -1964,13 +2088,16 @@ function MainController ($scope, $location) {
                message: 'Reconnection successful',
                lifetime: 1,
             });
-         });
+
+         });  
       }, timeout);
    }
 
-   setInterval(pingConnection, 5000);
+   if(CONFIG.pingConnection !== false) {
+      setInterval(pingConnection, 5000);
 
-   window.addEventListener("focus", function () {
-      pingConnection();
-   });
+      window.addEventListener("focus", function () {
+         pingConnection();
+      });
+   }
 }

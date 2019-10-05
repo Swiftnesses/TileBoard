@@ -5,7 +5,6 @@ Should you have any ideas or questions please post them on home-assistant forum 
 
 ## Links
 
-* [TileBoard Chat on Telegram](https://t.me/joinchat/CFM1kQ1ZSNL0T9RB9VwK5w)
 * [Discussion on Home Assistant Community](https://community.home-assistant.io/t/new-dashboard-for-ha/57173)
 * [Demo Video](https://youtu.be/L8JwzWNAPr8)
 
@@ -13,11 +12,9 @@ Should you have any ideas or questions please post them on home-assistant forum 
 
 ## Screenshots
 
-![screen](https://community-home-assistant-assets.s3-us-west-2.amazonaws.com/optimized/3X/b/b/bb15cc5c10e22940698bbb7058d6ed732bb0017a_1_690x388.png)
-
-![screen2](https://community-home-assistant-assets.s3-us-west-2.amazonaws.com/optimized/3X/1/f/1f9a1d7962f0a1335a2d06f352cb329f9d9444a5_1_690x388.png)
-
-![screen3](https://community-home-assistant-assets.s3-us-west-2.amazonaws.com/optimized/3X/7/d/7d300e8e307047c58234967fcf613d3ed0247dc6_1_690x498.jpg)
+![screen](./images/screenshots/default.png)
+![screen](./images/screenshots/transparent.png)
+![screen](./images/screenshots/homekit.jpg)
 
 ## How to use
 * Make sure that you have Home Assistant 0.77 or greater installed as only new authentication system is supported from now on
@@ -67,6 +64,12 @@ var CONFIG = {
     */
    authToken: null,
 
+   /* pingConnection: Set to false disable pinging of the websocket connection.
+    * Otherwise, a ping will be sent every five seconds, and if a response is not received in 3 seconds,
+    * a reconnect will be attempted. If not included in the config file, setting defaults to true.
+    */
+   pingConnection: true,
+
    /* debug: Toggle for extra debugging information.
     * If enabled, will print info about state changes and entities to console.
     */
@@ -75,10 +78,21 @@ var CONFIG = {
    /* timeFormat: 12 for AM/PM marker, 24 for 24 hour time (default) */
    timeFormat: Number,
    
-   /* Google API key is required if you are using device tarcker tiles along with Google Maps.
+   /* googleApiKey: Google API key is required if you are using device tracker tiles along with Google Maps.
     * More info here: https://developers.google.com/maps/documentation/maps-static/usage-and-billing
     */
    googleApiKey: null,
+
+   /* A Mapbox token is required if you are using device tracker tiles along with Mapbox.
+    * More info here: https://www.mapbox.com/maps/
+    */
+   mapboxToken: null,
+
+   /* mapboxStyle: Enter a style URL to change the mapbox style for device tracker tiles.
+    * The format of the url is: mapbox://styles/username/style-id
+    * If no style URL is entered, the style will default to mapbox/streets-v11.
+    */
+   mapboxStyle: null,
 
    /* menuPosition: LEFT (default) or BOTTOM */
    menuPosition: MENU_POSITIONS.LEFT,
@@ -119,15 +133,6 @@ var CONFIG = {
        {bg: 'images/bg3.png'}
      ]
    },
-   
-   /**
-   * if you have troubles with reconnecting to api after resuming device
-   * set maximal timeout for waiting api response before force reconnect
-   * In milliseconds
-   * default is 3000 (3 seconds)
-   * use false to disable ping
-   */
-   pingMaxTimeout: 3000,
    
    /* header: object of header. Will be applied globally
     * https://github.com/resoai/TileBoard/wiki/Header-configuration
@@ -322,7 +327,7 @@ Tile Object. [Click here for some real life examples](TILE_EXAMPLES.md)
   slidesDelay: 2,
 
   /* map: Map provider for showing position inside tile
-   * Valid options: 'google', 'yandex'
+   * Valid options: 'google', 'mapbox', 'yandex'
    */
   map: 'google',
   
@@ -376,6 +381,12 @@ Tile Object. [Click here for some real life examples](TILE_EXAMPLES.md)
    /** type: LIGHT **/
    /* sliders: list of slider object. See slider documentation below */
    sliders: [{}],
+   
+   /* colorpicker: whether or not the color picker should be used. 
+    * Only works with lights that have the rgb_color attribute 
+	* Valid options: true, false 
+	*/
+   colorpicker: true,
 
    /** type: POPUP_IFRAME **/
    url: String || Function,
@@ -397,6 +408,26 @@ Tile Object. [Click here for some real life examples](TILE_EXAMPLES.md)
     */
    fields: {},
 
+   /** type: GAUGE **/
+   /* Object containing gauge settings. Refer to https://ashish-chopra.github.io/angular-gauge/#!#documentation */
+   settings: {
+      size: 200, // Defaults to 50% of either height or width, whichever is smaller
+      type: 'full', // Options are: 'full', 'semi', and 'arch'. Defaults to 'full'
+      min: 0, // Defaults to 0
+      max: 25000, // Defaults to 100
+      cap: 'round', // Options are: 'round', 'butt'. Defaults to 'butt'
+      thick: 8, // Defaults to 6
+      label: 'My Gauge', // Defaults to undefined
+      append: '@attributes.unit_of_measurement', // Defaults to undefined
+      prepend: '$', // Defaults to undefined
+      duration: 1500, // Defaults to 1500ms
+      thresholds: { 0: { color: 'green'}, 80: { color: 'red' } },  // Defaults to undefined
+      labelOnly: false, // Defaults to false
+      foregroundColor: 'rgba(0, 150, 136, 1)', // Defaults to rgba(0, 150, 136, 1)
+      backgroundColor: 'rgba(0, 0, 0, 0.1)', // Defaults to rgba(0, 0, 0, 0.1)
+      fractionSize: 0 // Number of decimal places to round the number to. Defaults to current locale formatting
+   },
+  
    /* classes: Additional CSS classes. Use 'compact' for a compact (1x1) tile
     * (optional)
     */
@@ -456,6 +487,8 @@ var TYPES = {
    WEATHER_LIST: 'weather_list',
    VACUUM: 'vacuum',
    POPUP_IFRAME: 'popup_iframe',
+   DIMMER_SWITCH: 'dimmer_switch',
+   GAUGE: 'gauge',
 };
 ```
 
@@ -572,7 +605,23 @@ events: [
     }
   ],
 ```
-
+Example to fire an event in a [Home Assistant automation](https://www.home-assistant.io/docs/automation/).
+This example will make 'TileBoard' return to page 0 when a specific `binary_sensor` state change from `off` to `on`.
+*Tip: The page number is determinate by the order of the pages in your TileBoard `CONFIG` file, the first one is `0`.*
+```yaml
+- alias: aquarium_ok
+  initial_state: true
+  trigger:
+    platform: state
+    entity_id: binary_sensor.seneye_param_status
+    from: 'on'
+    to: 'off'
+  action:
+    - event: tileboard
+      event_data:
+        page: 0
+        command: 'open_page'
+```
 ## Notifications
 TileBoard has built-in support for toast notification popups in the
 lower right corner. To set them up, add the following to `events` in `CONFIG`:
@@ -584,17 +633,26 @@ lower right corner. To set them up, add the following to `events` in `CONFIG`:
    }
 }
 ```
-You can then fire a `tileboard` event in HomeAssistant with the following data:
-```json
-{
-    "command": "notify",
-    "id": "hello",
-    "icon": "mdi-car",
-    "type": "info",
-    "title": "Information",
-    "message": "Hello world",
-    "lifetime": 5,
-}
+Example to fire a notification in a [Home Assistant automation](https://www.home-assistant.io/docs/automation/).
+This example will fire a persistant red notification on TileBoard when a specific `binary_sensor` state change from `on` to `off`.
+*Tip : To remove the persistant notification, resend the same one (or another one) with the same `id:` with the `lifetime: 1` added at the end of the `event_data`.*
+```yaml
+- alias: PC2_offline
+  initial_state: true
+  trigger:
+    platform: state
+    entity_id: binary_sensor.pc2
+    from: 'on'
+    to: 'off'
+  action:
+    - event: tileboard
+      event_data:
+        command: 'notify'
+        id: 'PC2'
+        icon: 'mdi-desktop-tower'
+        type: 'error'
+        title: 'Status - PC2'
+        message: 'PC2 is offline, restart the left computer (big one)'
 ```
 `id`: Notification ID. Sending multiple notifications with the same `id` will overwrite each other.
 

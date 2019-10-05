@@ -144,6 +144,10 @@ var HApi = (function () {
       return this.send({type: "auth/current_user"}, callback);
    };
 
+   $Api.prototype.sendPing = function (callback) {
+      return this.send({type: "ping"}, callback);
+   };
+
    $Api.prototype._connect = function () {
       var self = this;
 
@@ -213,6 +217,14 @@ var HApi = (function () {
          }
       }
 
+      if(data.type === "pong" && data.id) {
+         if(this._callbacks[data.id]) {
+            setTimeout(function () {
+               self._callbacks[data.id](data);
+            }, 0);
+         }
+      }
+
       this._fire('message', data);
    };
 
@@ -251,7 +263,7 @@ var HApi = (function () {
    $Api.prototype._request = function (url, callback) {
       var xhr = new XMLHttpRequest();
 
-      xhr.open('POST', CONFIG.serverUrl + '/auth/token');
+      xhr.open('POST', toAbsoluteServerURL('/auth/token'));
       xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
       xhr.send(url + '&client_id=' + getOAuthClientId());
 
@@ -375,9 +387,10 @@ var HApi = (function () {
    function redirectOAuth() {
       removeToken();
 
-      window.location.href = CONFIG.serverUrl
-         + '/auth/authorize?client_id=' + getOAuthClientId()
-         + '&redirect_uri=' + getOAuthRedirectUrl();
+      window.location.href = toAbsoluteServerURL(
+         '/auth/authorize?client_id=' + getOAuthClientId()
+         + '&redirect_uri=' + getOAuthRedirectUrl()
+      );
    }
 
    return $Api;
