@@ -1,4 +1,3 @@
-
 App.directive('tile', function () {
    return {
       restrict: 'AE',
@@ -21,7 +20,7 @@ App.directive('camera', function () {
       },
       link: function ($scope, $el, attrs) {
          var $i = 0;
-         var photoUrl = null;
+         var imageUrl = null;
          var refresh = $scope.item.refresh || false;
          var current = null;
          var prev = null;
@@ -47,7 +46,7 @@ App.directive('camera', function () {
             current = el;
          };
 
-         var getPhotoUrl = function () {
+         var getImageUrl = function () {
             if($scope.item.filter) {
                return $scope.item.filter($scope.item, $scope.entity)
             }
@@ -60,33 +59,35 @@ App.directive('camera', function () {
          };
 
          var reloadImage = function () {
-            if(!photoUrl) return;
+            if(!imageUrl) return;
 
             if($i > 1 && $scope.freezed) return;
 
-            var url = photoUrl;
+            var url = imageUrl;
 
             url += (url.indexOf('?') === -1 ? '?' : '&') + ('_i=' + $i++);
 
-            appendImage(url)
+            appendImage(url);
          };
 
-         var setPhoto = function (url) {
-            photoUrl = url;
+         var setImage = function (url) {
+            imageUrl = url;
 
-            if(!photoUrl) return;
+            if(!imageUrl) return;
 
             reloadImage();
          };
 
-         var updatePhoto = function () {
-            var newUrl = getPhotoUrl();
+         var updateImage = function () {
+            var newUrl = getImageUrl();
 
-            if(photoUrl !== newUrl) setPhoto(newUrl);
+            if(imageUrl !== newUrl) setImage(newUrl);
          };
-
-         $scope.$watch('item', updatePhoto);
-         $scope.$watch('entity', updatePhoto);
+         $scope.$watchGroup([
+            'item', 
+            'entity', 
+            'entity.attributes.entity_picture'
+         ], updateImage);
 
          if(refresh) {
             var interval = setInterval(reloadImage, refresh);
@@ -99,7 +100,7 @@ App.directive('camera', function () {
    }
 });
 
-App.directive('cameraThumbnail', function () {
+App.directive('cameraThumbnail', ['Api', function (Api) {
    return {
       restrict: 'AE',
       replace: true,
@@ -158,8 +159,10 @@ App.directive('cameraThumbnail', function () {
             });
          };
 
-         $scope.$watch('item', reloadImage);
-         $scope.$watch('entity', reloadImage);
+         $scope.$watchGroup([
+            'item', 
+            'entity', 
+         ], reloadImage);
 
          if(refresh) {
             var interval = setInterval(reloadImage, refresh);
@@ -170,8 +173,70 @@ App.directive('cameraThumbnail', function () {
          }
       }
    }
-});
+}]);
 
+App.directive('cameraStream', ['Api', function (Api) {
+   return {
+      restrict: 'AE',
+      replace: true,
+      scope: {
+         item: '=item',
+         entity: '=entity',
+         freezed: '=freezed'
+      },
+      link: function ($scope, $el, attrs) {
+         var current = null;
+         var hls = null;
+
+         var appendVideo = function (url) {
+            var el = document.createElement('video');
+            el.style.objectFit = $scope.item.objFit || 'fill';
+            el.style.width = '100%';
+            el.style.height = '100%';
+            el.muted = 'muted';
+
+            var len = $scope.item.bufferLength || 5;
+
+            var config = {
+               maxBufferLength: len,
+               maxMaxBufferLength: len
+            };
+            
+            hls && hls.destroy();
+            hls = new Hls(config);
+            hls.loadSource(url);
+            hls.attachMedia(el);
+            hls.on(Hls.Events.MANIFEST_PARSED, function() {
+               el.play();
+            });
+            
+            if(current) $el[0].removeChild(current);
+            $el[0].appendChild(el);
+
+            current = el;
+         };
+
+         var requestStream = function () {
+            if($scope.entity.state === "off") return;
+
+            Api.send({
+                  type: "camera/stream",
+                  entity_id: $scope.entity.entity_id
+               },
+               function (res) {
+                  if(!res.result) return;
+                  appendVideo(toAbsoluteServerURL(res.result.url));
+               });
+         };
+         
+         $scope.$watch('entity', requestStream);
+
+         $scope.$on('$destroy', function() {
+            hls && hls.destroy();
+         });
+      }
+   }
+}]);
 
 App.directive('clock', ['$interval', function ($interval) {
    return {
@@ -334,3 +399,23 @@ App.directive('onScroll', [function () {
    }
 }]);
 
+// Custom directives to fix angularjs bug with dynamic max values being overriden to 100.
+// https://github.com/angular/angular.js/issues/6726
+App.directive('ngMin', function() {
+   return {
+      restrict: 'A',
+      require: 'ngModel',
+      link: function(scope, elem, attr) {
+         elem.attr('min', attr.ngMin);
+      },
+   };
+})
+App.directive('ngMax', function() {
+   return {
+      restrict: 'A',
+      require: 'ngModel',
+      link: function(scope, elem, attr) {
+         elem.attr('max', attr.ngMax);
+      },
+   };
+})

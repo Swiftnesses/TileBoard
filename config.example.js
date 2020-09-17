@@ -13,8 +13,8 @@ var CONFIG = {
    entitySize: ENTITY_SIZES.NORMAL, //SMALL, BIG are available
    tileSize: 150,
    tileMargin: 6,
-   serverUrl: "http://localhost:8123",
-   wsUrl: "ws://localhost:8123/api/websocket",
+   serverUrl: 'http://' + location.hostname + ':8123',
+   wsUrl: 'ws://' + location.hostname + ':8123/api/websocket',
    authToken: null, // optional long-lived token (CAUTION: only if TileBoard is not exposed to the internet)
    //googleApiKey: "XXXXXXXXXX", // Required if you are using Google Maps for device tracker
    //mapboxToken: "XXXXXXXXXX", // Required if you are using Mapbox for device tracker
@@ -27,10 +27,11 @@ var CONFIG = {
    menuPosition: MENU_POSITIONS.LEFT, // or BOTTOM
    hideScrollbar: false, // horizontal scrollbar
    groupsAlign: GROUP_ALIGNS.HORIZONTALLY, // or VERTICALLY
+   onReady: function () {},
 
    header: { // https://github.com/resoai/TileBoard/wiki/Header-configuration
       styles: {
-         padding: '30px 130px 0',
+         margin: '30px 130px 0',
          fontSize: '28px'
       },
       right: [],
@@ -38,7 +39,42 @@ var CONFIG = {
          {
             type: HEADER_ITEMS.DATETIME,
             dateFormat: 'EEEE, LLLL dd', //https://docs.angularjs.org/api/ng/filter/date
-         }
+         },
+         // {
+         //    type: HEADER_ITEMS.DATE,
+         //    dateFormat: 'EEEE, LLLL dd', //https://docs.angularjs.org/api/ng/filter/date
+         // },
+         // {
+         //    type: HEADER_ITEMS.TIME,
+         // },
+         // {
+         //    type: HEADER_ITEMS.CUSTOM_HTML,
+         //    html: 'Welcome to the <b>TileBoard</b>'
+         // },
+         // {
+         //    type: HEADER_ITEMS.WEATHER,
+         //    styles: {
+         //       margin: '0 0 0'
+         //    },
+         //    icon: '&sensor.dark_sky_icon.state',
+         //    icons: {
+         //       'clear-day': 'clear',
+         //       'clear-night': 'nt-clear',
+         //       'cloudy': 'cloudy',
+         //       'rain': 'rain',
+         //       'sleet': 'sleet',
+         //       'snow': 'snow',
+         //       'wind': 'hazy',
+         //       'fog': 'fog',
+         //       'partly-cloudy-day': 'partlycloudy',
+         //       'partly-cloudy-night': 'nt-partlycloudy'
+         //    },
+         //    fields: {
+         //       summary: '&sensor.dark_sky_summary.state',
+         //       temperature: '&sensor.dark_sky_temperature.state',
+         //       temperatureUnit: '&sensor.dark_sky_temperature.attributes.unit_of_measurement',
+         //    }
+         // }
       ]
    },
 

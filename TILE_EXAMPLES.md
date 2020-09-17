@@ -63,6 +63,31 @@ Manually trigger an automation
 }
 ```
 
+#### CAMERA_THUMBNAIL and CAMERA_STREAM
+Shows a camera feed on the tile and opens a fullscreen popup with an RTSP stream when pressed.
+Optionally, the fullscreen camera entity can be different from the thumbnail camera entity, for example to show a hires stream on the fullscreen popup only.
+
+```js
+{
+   position: [0, 0],
+   id: 'camera.front_gate',
+   type: TYPES.CAMERA_THUMBNAIL,
+   bgSize: 'cover',
+   width: 2,
+   state: false,
+   fullscreen: {
+      type: TYPES.CAMERA_STREAM,
+      objFit: 'contain',  // https://developer.mozilla.org/en-US/docs/Web/CSS/object-fit
+      id: 'camera.front_gate_highres',  // Optional: camera entity to use on fullscreen, defaults to the tile camera entity if omitted
+      bufferLength: 5  // Optional: buffer length in seconds for the HLS buffer, default is 5 seconds
+   },
+   refresh: function () { // can also be a function
+      return 3000 + Math.random() * 1000
+   }
+}
+```
+
+
 #### CLIMATE
 ![CLIMATE](images/tile-screenshots/CLIMATE.png)
 ```js
@@ -71,6 +96,7 @@ Manually trigger an automation
    id: "climate.kitchen",
    type: TYPES.CLIMATE,
    unit: 'C',
+   useHvacMode: false,  // Optional: enables HVAC mode (by default uses PRESET mode)
    state: function (item, entity) {
       return 'Current '
          + entity.attributes.current_temperature
@@ -80,7 +106,7 @@ Manually trigger an automation
 ```
 
 #### CUSTOM
-The custom tile type allows you to fire javascript commands on click/tap.
+The custom tile type does not have handling for any specific entity types. It can be used to, for example, trigger custom actions on pressing.
 
 ![CUSTOM](images/tile-screenshots/CUSTOM.png)
 
@@ -91,8 +117,12 @@ The custom tile type allows you to fire javascript commands on click/tap.
    title: 'Screen Off',
    id: { },
    icon: 'mdi-monitor',
+   customHtml: '<b>Hi</b>',  // Can also be a function that will be passed item and entity.
    action: function(item, entity) {
         fully.startScreensaver();
+   },
+   secondaryAction: function(item, entity) {
+      return this.$scope.openPopupIframe(item, entity);
    }
 },
 ```
@@ -130,6 +160,7 @@ Essentially a door entry tile is a pop-up with a fullscreen camera and a set of 
     layout: {
         camera: {
             type: TYPES.CAMERA,
+            objFit: 'contain',  // https://developer.mozilla.org/en-US/docs/Web/CSS/object-fit
             id: 'camera.front_gate',
             refresh: 1500,
             bgSize: 'cover'
@@ -193,6 +224,26 @@ Allows you to toggle a fan on and off, as well as set the speed.
 }
 ```
 
+#### HISTORY
+Displays the history of defined states.
+The variable `MINIMAL_CHART_OPTIONS` defines options for a minimal chart suited to be displayed in a tile.
+
+![HISTORY](images/tile-screenshots/HISTORY.png)
+
+```js
+{
+   position: [0, 1],
+   type: TYPES.HISTORY,
+   id: 'sensor.covid',
+   title: 'COVID-19 in Köln',
+   subtitle: function (item, entity) {
+      return 'since ' + timeAgo(Date.now() - (item.offset || 24*3600*1000));
+   },
+   offset: 5*24*3600*1000,
+   options: MINIMAL_CHART_OPTIONS,
+},
+```
+
 #### IFRAME
 ```js
 {
@@ -204,6 +255,50 @@ Allows you to toggle a fan on and off, as well as set the speed.
    refresh: 10000, // 10 seconds
    url: 'https://www.youtube.com/embed/_qNhxxo9rVU?autoplay=1'
 }
+```
+
+#### POPUP_IFRAME
+Allows opening popup with iframe content opened from specified URL.
+Also alows showing custom HTML content in the tile.
+
+```js
+{
+   position: [0, 3],
+   type: TYPES.POPUP_IFRAME,
+   id: {},
+   width: 3,
+   height: 2,
+   customHtml: '<b>Hi</b>',  // Can also be a function that will be passed item and entity.
+   url: 'https://www.youtube.com/embed/_qNhxxo9rVU?autoplay=1'
+}
+```
+
+#### POPUP
+Opens a popup when clicked. 
+The popup contents can be configured with any tile you like.
+Think of the popup as a single stand-alone `group` of tiles.
+
+![POPUP](images/tile-screenshots/POPUP.png)<br>
+![POPUP](images/tile-screenshots/POPUP_popup.png)
+
+```js
+{
+   type: TYPES.POPUP,
+   id: {},
+   icon: 'mdi-android',
+   title: 'History popup',
+   state: false,
+   popup: {
+      tileSize: 100,
+      items: [
+         {
+            position: [1, 1],
+            type: TYPES.SENSOR,
+            id: 'sensor.covid',
+         },
+      ]
+   }
+},
 ```
 
 #### INPUT_BOOLEAN
@@ -234,6 +329,22 @@ Allows you to toggle a fan on and off, as well as set the speed.
    type: TYPES.INPUT_SELECT,
    id: 'input_select.climate_mode',
    state: false
+}
+```
+
+![INPUT_SELECT](images/tile-screenshots/INPUT_SELECT_2.png)
+```js
+{
+   position: [0, 1],
+   type: TYPES.INPUT_SELECT,
+   id: 'input_select.house_mode',
+   title: 'House Mode',
+   icons: {
+      Normal: 'mdi-home',
+      Vacation: 'mdi-palm-tree',
+      Sick: 'mdi-medical-bag',
+      Travel: 'mdi-airplane'
+   }
 }
 ```
 
@@ -362,7 +473,8 @@ Call script on click/tap<br>
       on: "mdi-gate",
       off: "mdi-gate"
    },
-   state: false
+   state: false,
+   variables: { var1: 'foo' },
 }
 ```
 
@@ -611,5 +723,17 @@ This is a custom tile which can be used for displaying values from different sen
       backgroundColor: 'rgba(0, 0, 0, 0.1)', // Defaults to rgba(0, 0, 0, 0.1)
       fractionSize: 0, // Number of decimal places to round the number to. Defaults to current locale formatting
    },
+}
+```
+
+
+#### IMAGE
+![IMAGE](images/tile-screenshots/IMAGE.png)<br>
+```js
+{
+   position: [0, 1],
+   type: TYPES.IMAGE,
+   id: {},
+   url: '../qrcode.png'
 }
 ```
